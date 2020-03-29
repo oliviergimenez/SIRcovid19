@@ -83,7 +83,7 @@ out %>%
                          breaks = c('susceptible','infected'))
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
+![](unnamed-chunk-5-1.png)<!-- -->
 
 The unimodal infected curve shows that the epidemic occurs between 50 and 100 days. Then, because recovery means immunity for life in this model, the number of susceptible individuals at risk of getting infected decreases through time, and the epidemic eventually stops because there is no more susceptible host to infect. 
 
