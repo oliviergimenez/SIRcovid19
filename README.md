@@ -121,7 +121,7 @@ out %>%
                          breaks = c('susceptible','infected'))
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+![](unnamed-chunk-6-1.png)<!-- -->
 
 We may use a prevalence on log scale which shows an exponential growth in the early stage of the epidemic:
 
@@ -149,7 +149,7 @@ out %>%
   coord_trans(y = "log10")
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+![](unnamed-chunk-7-1.png)<!-- -->
 
 If we increase $R_0$, the epidemic is faster: 
 
@@ -255,7 +255,7 @@ library(patchwork)
 linearRknot2 + logRknot2 + linearRknot35 + logRknot35 
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
+![](unnamed-chunk-8-1.png)<!-- -->
 
 On the right, we see that the slope of the infected increases when we go from $R_0=2$ (top right) to $R_0=3.5$ (bottom right). 
 Also on the left, we see that the drop in the susceptible is faster when we go from $R_0=2$ (top left) to $R_0=3.5$ (bottom left).
@@ -324,7 +324,7 @@ res <- out %>%
                          breaks = c('susceptible','infected'))
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+![](unnamed-chunk-10-1.png)<!-- -->
 
 Now we introduce social distancing after 30 days and have increasing social distancing with $c_{\beta} = 0.3, 0.6, 0.9$. We get:
 
@@ -514,7 +514,7 @@ logcb09 <- ggplot() +
 (linearcb09 | logcb09)
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-11-1.png)<!-- -->
+![](unnamed-chunk-11-1.png)<!-- -->
 
 When you do social distancing (the grey shaded area), you flatten the curve of the epidemic (top left to middle left to bottom left), and eventually, you eradicate the disease (bottom right). The thing with permanent social distancing is that it is unfeasible in the long term (socially, economically, etc..). 
 
@@ -590,7 +590,7 @@ res <- out %>%
                          breaks = c('susceptible','infected'))
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-13-1.png)<!-- -->
+![](unnamed-chunk-13-1.png)<!-- -->
 And on the log scale:
 
 ```r
@@ -625,7 +625,7 @@ res <- out %>%
   coord_trans(y = "log10")
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-14-1.png)<!-- -->
+![](unnamed-chunk-14-1.png)<!-- -->
 
 We see that social distancing does have an effect by inverting the slope of infected individuals from 30 days onward; however, when we stop social distancing at 180 days then there are still a lot of susceptible individuals at risk of being infected, and there is a second wave occuring. Now if we decrease the intensity of social distancing, say with $c_{\beta} = 0.4$, then there will not be a second wave: 
 
@@ -661,7 +661,7 @@ res <- out %>%
   coord_trans(y = "log10")
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
+![](unnamed-chunk-15-1.png)<!-- -->
 
 This is because during the social distancing period (the grey shaded area in the figure below), the intensity is strong enough for a lot of immunity to build up (herd immunity), and the density of susceptible individuals decreases which means less opportunity for transmission:
 
@@ -696,7 +696,7 @@ res <- out %>%
                          breaks = c('susceptible','infected'))
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-16-1.png)<!-- -->
+![](unnamed-chunk-16-1.png)<!-- -->
 
 Even though this optimal social distancing intensity does the job, it is still unsatisfying because at the peak of the epidemic, there is still a large proportion of the population which is infected.
 
@@ -778,7 +778,7 @@ res <- out %>%
                          breaks = c('susceptible','infected'))
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
+![](unnamed-chunk-18-1.png)<!-- -->
 
 And on the log scale:
 
@@ -817,6 +817,6 @@ res <- out %>%
   coord_trans(y = "log10")
 ```
 
-![](sir_covid19_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
+![](unnamed-chunk-19-1.png)<!-- -->
 
 We see that during the periods of social distancing (grey shaded areas), we decrease the size of the epidemic, then in between periods of social distancing, the epidemic might come back, or you might succeed in eradicating the epidemic. Also, the maximum level of prevalence is lower than in permanent or transitory social distancing, which might help in decreasing the number of patients on hospitals and buying some time to develop a vaccine.
