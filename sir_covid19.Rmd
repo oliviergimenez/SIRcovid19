@@ -1,6 +1,8 @@
 ---
 title: "SIR covid-19"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -11,17 +13,17 @@ knitr::opts_chunk$set(echo = TRUE, cache = TRUE, dpi = 600, message = FALSE, war
 
 Last week, the [Montpellier Evolution and Ecology seminar](http://www.labex-cemeb.org/fr/recherche/seminaires-en-ecologie-et-evolution-de-montpellier-seem) was broadcasted online. The organisers had the awesome idea of inviting experts in epidemiology and evolution to talk about the covid-19. [Mircea Sofonea](http://www.normalesup.org/~sofonea/) talked about estimating epidemiological parameters of the virus spread, [Nicolas Bierne](http://www.isem.univ-montp2.fr/en/personnel/teams/integrative-genomics/bierne-nicolas.index/) talked about the genomic epidemiology of SARS-CoV-2 and [Sylvain Gandon](https://www.cefe.cnrs.fr/fr/recherche/ee/eee/850-c/110-sylvain-gandon) talked about epidemiology and evolution of SARS-CoV2. 
 
-The talks were recorded, and the videos can be found on Youtube [here](https://www.youtube.com/watch?v=OuiFUWko3yQ). 
+The talks were recorded, and the videos can be found on Youtube [here](https://www.youtube.com/watch?v=OuiFUWko3yQ) along with the questions/answers [there](https://docs.google.com/document/d/1OOZY_4VmrLZvDioUNBTuxUMS_x8u1CwmBaXuz5kSJKQ/edit?usp=sharing). 
 
 I am no expert in genomics, and Mircea, [Samuel Alizon](http://alizon.ouvaton.org/index_fr.html) and their colleagues have made their work available in [several reports](http://alizon.ouvaton.org/COVID.html) that include `R` codes. Here, I will focus my attention on Sylvain's work with Sébastien Lion and Troy Day. I am gonna reproduce their analyses in R. In brief, **Sylvain Gandon and colleagues use a SIR model to illustrate the effect of different strategies of social distancing on the epidemic**. Sylvain's talk starts at the 49th minute [here](https://www.youtube.com/watch?v=OuiFUWko3yQ) and lasts approx. 25 minutes. Watch it, you will not regret it. 
-If you'd like to know more about epidemiological models and `R`, I strongly recommend [Epidemics: Models and Data in R](https://www.springer.com/gp/book/9783319974866) by Ottar N. Bjornstad which comes with [R codes and Shiny apps](https://github.com/objornstad/epimdr). 
+If you'd like to know more about epidemiological models and `R`, I strongly recommend [Epidemics: Models and Data in R](https://www.springer.com/gp/book/9783319974866) by Ottar N. Bjornstad which comes with [R codes and Shiny apps](https://github.com/objornstad/epimdr). A quick introduction to SIR models in relation to covid-19 can be found [there](https://medium.com/data-for-science/epidemic-modeling-101-or-why-your-covid19-exponential-fits-are-wrong-97aa50c55f8).
 
-Below I follow Sylvain's talk step by step and the comments are basically transcripts of his words. 
+Below I follow Sylvain's talk step by step and the comments are basically transcripts of his words. GitHub does not support inline formulas, which explains why they look funny (latex style) below; you might want to have a look the [html file](https://github.com/oliviergimenez/SIRcovid19/blob/master/sir_covid19.html) or the [pdf file](https://github.com/oliviergimenez/SIRcovid19/blob/master/sir_covid19.pdf) or re-run the analyses with the [Rmd file](https://github.com/oliviergimenez/SIRcovid19/blob/master/sir_covid19.Rmd) in RStudio. 
 
 ## SIR model
 
 We start with a [classic SIR model](https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology#The_SIR_model) omitting birth and death. We have three compartments $S$, $I$ and $R$, for the susceptible, infected and recovered stocks, with $N = S + I + R$. Total population size is constant through time. The dynamic of the system is described by a system of ordinary differential equations (ODEs):
-$$\frac{dS}{dt}=-\beta I S/N, \frac{dI}{dt}=\beta I S/N - \gamma I, \frac{dR}{dt}=-\gamma I$$
+$$\frac{dS}{dt}=-\beta I S/N, \frac{dI}{dt}=\beta I S/N - \gamma I, \frac{dR}{dt}=\gamma I$$
 Let us have a look to the dynamic of this system. We load the `deSolve` package for solving ODEs and the `tidyverse` package for data manipulation and visualisation, and set defaults for data visualisation:
 ```{r}
 library(deSolve)
@@ -504,6 +506,39 @@ logcb09 <- ggplot() +
 
 When you do social distancing (the grey shaded area), you flatten the curve of the epidemic (top left to middle left to bottom left), and eventually, you eradicate the disease (bottom right). The thing with permanent social distancing is that it is unfeasible in the long term (socially, economically, etc..). 
 
+We can dig a bit deeper and see the effect of social distancing on the total epidemic size. Calculating total epidemic size boils down to finding out the equilibrium of the ODEs system. To do so, we will use numerical integration and the `rootSolve` package:
+```{r}
+library(rootSolve)
+
+init <- c(S = 1-1e-5, I = 1e-5, R = 0)
+lgrid <- 100
+grid <- seq(0.01, 0.7, length = lgrid)
+res <- rep(NA,lgrid)
+index <- 1
+for (i in grid){
+  parameters <- c(N = 1, beta = 0.25, gamma = 0.1, cbeta = i, cgamma = 0, tSD = 30)
+  times      <- c(0, 300)
+  out <- runsteady(y = init, times = times, func = sirSD, parms = parameters)  
+  res[index] <- out$y[3]
+  index <- index + 1
+}
+```
+
+We may visualize the result: 
+```{r}
+res %>% 
+  as_tibble() %>%
+  add_column(cbeta = grid) %>%
+  ggplot(aes(x = cbeta, y = value)) + 
+  geom_line(lwd=1.5) + 
+  labs(title = '',
+       x = 'Intensity of social distancing',
+       y = 'Total epidemic size') + 
+  scale_y_continuous(breaks = seq(0, 1, by = 0.1))
+```
+
+If there is no social distancing, at the end of the epidemic, almost $90\%$ individuals get infected. In contrast, if we apply a social distancing of $c_{\beta} = 0.6$ or higher, then the number of infected individuals is almost null.
+
 What if stop social distancing after some time, or do social distancing repeatedly over several periods of time?
 
 ### Transitory social distancing
@@ -545,7 +580,7 @@ list(res)
 With $R_0=2.5$ and $c_{\beta} = 0.8$, we get:
 ```{r}
 init       <- c(S = 1-1e-5, I = 1e-5, R = 0)
-parameters <- c(mu = 0, N = 1, beta = 0.25, gamma = 0.1, cbeta = 0.8, cgamma = 0, tSDmin = 30, tSDmax = 180)
+parameters <- c(N = 1, beta = 0.25, gamma = 0.1, cbeta = 0.8, cgamma = 0, tSDmin = 30, tSDmax = 180)
 times      <- seq(0, 400, by = 1)
 rects <- data.frame(xstart = 30,
                 xend = 180,
@@ -573,10 +608,11 @@ res <- out %>%
   scale_colour_viridis_d(name = NULL,
                          breaks = c('susceptible','infected'))
 ```
+
 And on the log scale:
 ```{r}
 init       <- c(S = 1-1e-5, I = 1e-5, R = 0)
-parameters <- c(mu = 0, N = 1, beta = 0.25, gamma = 0.1, cbeta = 0.8, cgamma = 0, tSDmin = 30, tSDmax = 180)
+parameters <- c(N = 1, beta = 0.25, gamma = 0.1, cbeta = 0.8, cgamma = 0, tSDmin = 30, tSDmax = 180)
 times      <- seq(0, 400, by = 1)
 rects <- data.frame(xstart = 30,
                 xend = 180,
@@ -609,7 +645,7 @@ res <- out %>%
 We see that social distancing does have an effect by inverting the slope of infected individuals from 30 days onward; however, when we stop social distancing at 180 days then there are still a lot of susceptible individuals at risk of being infected, and there is a second wave occuring. Now if we decrease the intensity of social distancing, say with $c_{\beta} = 0.4$, then there will not be a second wave: 
 ```{r}
 init       <- c(S = 1-1e-5, I = 1e-5, R = 0)
-parameters <- c(mu = 0, N = 1, beta = 0.25, gamma = 0.1, cbeta = 0.4, cgamma = 0, tSDmin = 30, tSDmax = 180)
+parameters <- c(N = 1, beta = 0.25, gamma = 0.1, cbeta = 0.4, cgamma = 0, tSDmin = 30, tSDmax = 180)
 times      <- seq(0, 400, by = 1)
 rects <- data.frame(xstart = 30,
                 xend = 180,
@@ -642,7 +678,7 @@ res <- out %>%
 This is because during the social distancing period (the grey shaded area in the figure below), the intensity is strong enough for a lot of immunity to build up (herd immunity), and the density of susceptible individuals decreases which means less opportunity for transmission:
 ```{r}
 init       <- c(S = 1-1e-5, I = 1e-5, R = 0)
-parameters <- c(mu = 0, N = 1, beta = 0.25, gamma = 0.1, cbeta = 0.4, cgamma = 0, tSDmin = 30, tSDmax = 180)
+parameters <- c(N = 1, beta = 0.25, gamma = 0.1, cbeta = 0.4, cgamma = 0, tSDmin = 30, tSDmax = 180)
 times      <- seq(0, 400, by = 1)
 rects <- data.frame(xstart = 30,
                 xend = 180,
@@ -669,6 +705,35 @@ res <- out %>%
        y = 'Prevalence (log)') + 
   scale_colour_viridis_d(name = NULL,
                          breaks = c('susceptible','infected'))
+```
+
+Let us look at the effect of transitory social distancing on the total epidemic size:
+```{r}
+init <- c(S = 1-1e-5, I = 1e-5, R = 0)
+lgrid <- 100
+grid <- seq(0.01, 0.7, length = lgrid)
+res <- rep(NA,lgrid)
+index <- 1
+for (i in grid){
+  parameters <- c(N = 1, beta = 0.25, gamma = 0.1, cbeta = i, cgamma = 0, tSDmin = 30, tSDmax = 180)
+  times      <- c(0, 350)
+  out <- runsteady(y = init, times = times, func = sirSDtransitory, parms = parameters)  
+  res[index] <- out$y[3]
+  index <- index + 1
+}
+```
+
+We may visualize the result: 
+```{r}
+res %>% 
+  as_tibble() %>%
+  add_column(cbeta = grid) %>%
+  ggplot(aes(x = cbeta, y = value)) + 
+  geom_line(lwd=1) + 
+  labs(title = '',
+       x = 'Intensity of social distancing',
+       y = 'Total epidemic size') +
+  ylim(0,1)
 ```
 
 Even though this optimal social distancing intensity does the job, it is still unsatisfying because at the peak of the epidemic, there is still a large proportion of the population which is infected.
@@ -779,7 +844,7 @@ res <- out %>%
   labs(title = 'Multiple bouts social distancing',
        subtitle = expression(paste('Log scale',~c[beta],'=0.9')),
        x = 'Time (days)',
-       y = 'Prevalence (log)') + 
+       y = 'Prevalence') + 
   scale_colour_viridis_d(name = NULL,
                          breaks = c('susceptible','infected')) +
   coord_trans(y = "log10")
